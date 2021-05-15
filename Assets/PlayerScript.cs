@@ -15,8 +15,12 @@ public class PlayerScript : MonoBehaviour
     [SerializeField, Header("User Interface")] Text ammoCounter;
 
     [SerializeField, Header("Gubbins")] GameObject spentClip;
-    [SerializeField] GameObject unspentClip, pingedShell;
-    [SerializeField] Transform clipDropPoint, shellPingPoint;
+    [SerializeField] GameObject unspentClip, pingedShell, bulletTrail, impactFX;
+    [SerializeField] Transform clipDropPoint, shellPingPoint, bulletFirePoint;
+    [SerializeField] ParticleSystem muzzleFlash;
+
+    [SerializeField, Header("Emotional Gubbins :(")] float currentMood;
+    [SerializeField, ColorUsage(true, true)] Color baseColour, angryColour;
     // Start is called before the first frame update
     void Start()
     {
@@ -30,8 +34,13 @@ public class PlayerScript : MonoBehaviour
     {
         crosshairUpdate();
         playerFacingUpdate();
-        movementUpdate();
         weaponHandlingUpdate();
+        miscUpdate();
+    }
+
+    private void FixedUpdate()
+    {
+        movementUpdate();
     }
 
     void crosshairUpdate()
@@ -75,9 +84,31 @@ public class PlayerScript : MonoBehaviour
         ammoCounter.text = AmmoCount.ToString();
     }
 
-    public void DecreaseAmmoCount()
+    void miscUpdate()
+    {
+        anim.SetFloat("Emotion", currentMood);
+    }
+
+    public void fireGun()
     {
         AmmoCount--;
+        muzzleFlash.Play();
+        RaycastHit bulletImpact;
+        if(Physics.Raycast(bulletFirePoint.position, bulletFirePoint.forward, out bulletImpact, Mathf.Infinity))
+        {
+            GameObject bulletLine = Instantiate(bulletTrail, Vector3.zero, new Quaternion(0,0,0,0));
+            BulletTrailScript trailScript = bulletLine.GetComponent<BulletTrailScript>();
+            trailScript.point0Point = bulletFirePoint.position;
+            trailScript.point1Point = bulletImpact.point;
+            Instantiate(impactFX, bulletImpact.point, bulletFirePoint.rotation);
+        }
+        else
+        {
+            GameObject bulletLine = Instantiate(bulletTrail, Vector3.zero, new Quaternion(0, 0, 0, 0));
+            BulletTrailScript trailScript = bulletLine.GetComponent<BulletTrailScript>();
+            trailScript.point0Point = bulletFirePoint.position;
+            trailScript.point1Point = bulletFirePoint.forward * 1000f;
+        }
     }
 
     public void refillAmmo()
