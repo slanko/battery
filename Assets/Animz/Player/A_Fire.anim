@@ -1375,7 +1375,7 @@ AnimationClip:
     intParameter: 0
     messageOptions: 0
   - time: 0
-    functionName: playSound
+    functionName: playGunShotSpecifically
     data: 
     objectReferenceParameter: {fileID: 8300000, guid: b8d13150562a45e45a61072e6cb2521c, type: 3}
     floatParameter: 0
