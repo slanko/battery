@@ -182,6 +182,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3418213638395487381}
   - component: {fileID: 3418213638395487378}
+  - component: {fileID: 6523320189703920542}
   - component: {fileID: 3418213638395487382}
   - component: {fileID: 3418213638395487383}
   - component: {fileID: 3418213638395487380}
@@ -262,6 +263,21 @@ MonoBehaviour:
   currentPoint: 0
   patrolPointList: []
   myBlood: {fileID: 1585080818383876657, guid: a8c5fc34c7d5017489453ccb74f53174, type: 3}
+--- !u!114 &6523320189703920542
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3418213638395487385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e25603a78df475e4ab415dcd3c1580d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  impactFX: {fileID: 6996926382319393387, guid: 6fe2d59ba76ef2c41889ceff8c3a94dc, type: 3}
+  impactSparkFX: {fileID: 1363545918748175669, guid: bf910cd2d147f004698e2d52da04a009, type: 3}
+  bulletTrail: {fileID: 7497040265863832427, guid: d5d6783a7ce39574eb7842424138201f, type: 3}
 --- !u!136 &3418213638395487382
 CapsuleCollider:
   m_ObjectHideFlags: 0

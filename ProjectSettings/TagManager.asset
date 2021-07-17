@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Reflective
   - Mook
+  - Sound
   layers:
   - Default
   - TransparentFX

@@ -22,6 +22,7 @@ public class EnemyScript : MonoBehaviour
     [SerializeField] Transform playerChar, currentTarget, handVisual, handRotationGhost, enemyVisual, playerLocator, forwardLocator;
     [SerializeField] GameObject myBattery;
     Rigidbody rb;
+    shootingScript shoot;
 
     [SerializeField, Header("Shooting Stuff")] Transform bulletFirePoint;
     bool isShooting;
@@ -68,6 +69,7 @@ public class EnemyScript : MonoBehaviour
         anim = GetComponent<Animator>();
         aud = GetComponent<AudioSource>();
         rb = GetComponent<Rigidbody>();
+        shoot = GetComponent<shootingScript>();
         playerChar = GameObject.Find("Player").GetComponent<Transform>();
         playerLocator = GameObject.Find("PlayerLocationWithLerpSphere").GetComponent<Transform>();
         StartCoroutine("keepLookout");
@@ -228,6 +230,11 @@ public class EnemyScript : MonoBehaviour
         return canSeePlayer;
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Sound" && currentState == enemyState.IDLE || currentState == enemyState.SUSPICIOUS) transitionState(enemyState.SUSPICIOUS);
+    }
+
     IEnumerator shootGunCoroutine()
     {
         isShooting = true;
@@ -244,52 +251,7 @@ public class EnemyScript : MonoBehaviour
         handVisual.rotation = recoilVector;
         recoilIntensity += recoilAdd;
         muzzleFlash.Play();
-        fireABullet(bulletFirePoint.position, bulletFirePoint.forward, false);
-
-    }
-    void fireABullet(Vector3 pos, Vector3 dir, bool reflected)
-    {
-        RaycastHit bulletImpact;
-        if (Physics.Raycast(pos, dir, out bulletImpact, Mathf.Infinity))
-            createNewBulletLine(pos, bulletImpact.point, true);
-        else
-            createNewBulletLine(pos, Vector3.zero, false);
-        bool foundType = false;
-        switch (bulletImpact.transform.gameObject.tag)
-        {
-            case "Reflective":
-                foundType = true;
-                if (reflected == false)
-                {
-                    fireABullet(bulletImpact.point, Vector3.Reflect(bulletFirePoint.forward, bulletImpact.normal), true);
-                }
-                Quaternion impactSparksDir = new Quaternion();
-                impactSparksDir.eulerAngles = Vector3.Reflect(bulletFirePoint.forward, bulletImpact.normal);
-                Instantiate(impactSparkFX, bulletImpact.point, impactSparksDir);
-                break;
-            case "Mook":
-                foundType = true;
-                EnemyScript enemy = bulletImpact.transform.gameObject.GetComponent<EnemyScript>();
-                enemy.takeDamage(1);
-                Instantiate(enemy.myBlood, bulletImpact.point, bulletFirePoint.rotation);
-                break;
-            case "Player":
-                foundType = true;
-                PlayerScript player = bulletImpact.transform.gameObject.GetComponent<PlayerScript>();
-                player.takeDamage();
-                Instantiate(player.myBlood, bulletImpact.point, bulletFirePoint.rotation);
-                break;
-        }
-        if (foundType == false) Instantiate(impactFX, bulletImpact.point, bulletFirePoint.rotation);
-    }
-
-    void createNewBulletLine(Vector3 startPoint, Vector3 endPoint, bool hitSomething)
-    {
-        GameObject bulletLine = Instantiate(bulletTrail, Vector3.zero, new Quaternion(0, 0, 0, 0));
-        BulletTrailScript trailScript = bulletLine.GetComponent<BulletTrailScript>();
-        trailScript.point0Point = startPoint;
-        if (hitSomething) trailScript.point1Point = endPoint;
-        else trailScript.point1Point = new Vector3(startPoint.x, startPoint.y, startPoint.z * 1000f);
+        shoot.fireABullet(bulletFirePoint.position, bulletFirePoint.forward, false);
     }
 
     public void pingShell()
@@ -376,6 +338,7 @@ public class EnemyScript : MonoBehaviour
                 anim.SetBool("Alive", false);
                 enemyVisual.LookAt(playerChar);
                 dropGun();
+                Instantiate(myBattery, transform.position, transform.rotation);
                 break;
         }
     }

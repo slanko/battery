@@ -19,6 +19,7 @@ public class PlayerScript : MonoBehaviour
     Animator anim;
     Animator crosshairAnim;
     AudioSource aud;
+    shootingScript shoot;
     Vector3 aimPointNormal; //used to get normal of point aimed at, decides whether to aim at the crosshair or the crosshairlet
 
     [SerializeField, Header("User Interface")] Text ammoCounter;
@@ -29,6 +30,8 @@ public class PlayerScript : MonoBehaviour
     [SerializeField] float overchargeDecay, leftChargeAmount, leftChargeMax, rightChargeAmount, rightChargeMax, overchargeAmount, overchargeMax;
     [SerializeField] ParticleSystem overchargeFX;
     [SerializeField] Slider leftChargeSlider, rightChargeSlider;
+
+    [SerializeField, Header("Sound Stuff")] GameObject soundSphere;
 
     [SerializeField, Header("Gubbins")] GameObject spentClip;
     [SerializeField] GameObject unspentClip, pingedShell, bulletTrail, impactFX, impactSparkFX, silencer, droppedGun;
@@ -51,6 +54,7 @@ public class PlayerScript : MonoBehaviour
         crosshairAnim = crosshair.gameObject.GetComponent<Animator>();
         aud = GetComponent<AudioSource>();
         ammoSlider.value = AmmoCount;
+        shoot = GetComponent<shootingScript>();
     }
 
     // Update is called once per frame
@@ -123,6 +127,17 @@ public class PlayerScript : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.T)) anim.SetTrigger("ToggleSilencer");
         if (Input.GetKeyDown(KeyCode.Y)) toggleLaserSight();
         ammoCounter.text = AmmoCount.ToString();
+        if (overchargeAmount > 0)
+        {
+            float overchargeDiv = overchargeAmount / (overchargeAmount * 0.5f);
+            anim.SetFloat("Firerate", 1 + overchargeDiv);
+            anim.SetFloat("ReloadSpeed", 1 + overchargeDiv);
+        }
+        else
+        {
+            anim.SetFloat("Firerate", 1);
+            anim.SetFloat("ReloadSpeed", 1);
+        }
         if (recoilIntensity > 0) recoilIntensity -= recoilCooldownSpeed * Time.deltaTime;
         if (recoilIntensity > recoilIntensityMax) recoilIntensity = recoilIntensityMax;
         if (recoilIntensity < 0) recoilIntensity = 0;
@@ -162,60 +177,16 @@ public class PlayerScript : MonoBehaviour
         {
             muzzleFlash.Play();
             muzzleFlashLight.range = 10;
-            fireABullet(bulletFirePoint.position, bulletFirePoint.forward, false);
+            shoot.fireABullet(bulletFirePoint.position, bulletFirePoint.forward, false);
+            makeSoundSphere(100f, .1f, bulletFirePoint.position);
         }
         else
         {
             muzzleFlashLight.range = 0;
-            fireABullet(bulletFirePoint.position, bulletFirePoint.forward, false);
+            shoot.fireABullet(bulletFirePoint.position, bulletFirePoint.forward, false);
+            makeSoundSphere(10f, .1f, bulletFirePoint.position);
         }
     }
-
-    void fireABullet(Vector3 pos, Vector3 dir, bool reflected)
-    {
-        RaycastHit bulletImpact;
-        if (Physics.Raycast(pos, dir, out bulletImpact, Mathf.Infinity))
-            createNewBulletLine(pos, bulletImpact.point, true);
-        else
-            createNewBulletLine(pos, Vector3.zero, false);
-        bool foundType = false;
-        switch (bulletImpact.transform.gameObject.tag)
-        {
-            case "Reflective":
-                foundType = true;
-                if(reflected == false)
-                {
-                    fireABullet(bulletImpact.point, Vector3.Reflect(bulletFirePoint.forward, bulletImpact.normal), true);
-                }
-                Quaternion impactSparksDir = new Quaternion();
-                impactSparksDir.eulerAngles = Vector3.Reflect(bulletFirePoint.forward, bulletImpact.normal);
-                Instantiate(impactSparkFX, bulletImpact.point, impactSparksDir);
-                break;
-            case "Mook":
-                foundType = true;
-                EnemyScript enemy = bulletImpact.transform.gameObject.GetComponent<EnemyScript>();
-                enemy.takeDamage(1);
-                Instantiate(enemy.myBlood, bulletImpact.point, bulletFirePoint.rotation);
-                break;
-            case "Player":
-                foundType = true;
-                PlayerScript player = bulletImpact.transform.gameObject.GetComponent<PlayerScript>();
-                player.takeDamage();
-                Instantiate(player.myBlood, bulletImpact.point, bulletFirePoint.rotation);
-                break;
-        }
-        if (foundType == false) Instantiate(impactFX, bulletImpact.point, bulletFirePoint.rotation);
-    }
-
-    void createNewBulletLine(Vector3 startPoint, Vector3 endPoint, bool hitSomething)
-    {
-        GameObject bulletLine = Instantiate(bulletTrail, Vector3.zero, new Quaternion(0, 0, 0, 0));
-        BulletTrailScript trailScript = bulletLine.GetComponent<BulletTrailScript>();
-        trailScript.point0Point = startPoint;
-        if(hitSomething)trailScript.point1Point = endPoint;
-        else trailScript.point1Point = new Vector3(startPoint.x, startPoint.y, startPoint.z * 1000f);
-    }
-
     public void refillAmmo()
     {
         if (AmmoCount >= 1) AmmoCount = AmmoMax + 1;
@@ -237,6 +208,12 @@ public class PlayerScript : MonoBehaviour
     public void playSound(AudioClip audio)
     {
         aud.PlayOneShot(audio);
+    }
+
+    void makeSoundSphere(float size, float destroyTime, Vector3 pos)
+    {
+        soundManager sound = Instantiate(soundSphere, pos, Quaternion.identity).GetComponent<soundManager>();
+        sound.setVariables(size, destroyTime);
     }
 
     public void playGunShotSpecifically()
